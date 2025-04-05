@@ -7,7 +7,7 @@ This repository aims to benchmark router operating system network performances. 
 
 ## Before using
 
-> [!INFO]
+> [!NOTE]
 > This tutorial comes from https://mininet.org/vm-setup-notes/
 
 1. Download the latest mininet vm, e.g. `mininet-2.3.0-210211-ubuntu-20.04.1-legacy-server-amd64-ovf.zip`
@@ -25,7 +25,7 @@ Launch the mininet vm.
 ./launch-mininet.sh
 ```
 
-> [!INFO]
+> [!TIP]
 > On the host machine, quit qemu with `Ctrl-a`, then `x`
 
 Connect to the mininet vm through ssh.
@@ -34,7 +34,7 @@ Connect to the mininet vm through ssh.
 ssh -Y -p 8022 mininet@localhost
 ```
 
-> [!INFO]
+> [!NOTE]
 > Password: mininet
 
 ### On the mininet VM
