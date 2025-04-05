@@ -1,0 +1,22 @@
+{
+  "OpenWRT": {
+    "image": "openwrt-24.10.0-x86-64-generic-squashfs-combined-efi.img",
+    "config": "unix"
+  },
+  "VyOS": {
+    "image": "vyos-2025.04.04-0018-rolling-generic-amd64.iso",
+    "config": "unix"
+  },
+  "SONiC": {
+    "image": "sonic-vs-202411.img",
+    "config": "unix"
+  },
+  "BSDRP": {
+    "image": "BSDRP-1.994-full-amd64-vga.img",
+    "config": "unix"
+  },
+  "Redox": {
+    "image": "redox_server_x86_64_2024-09-07_1225_harddrive.img",
+    "config": "unix"
+  }
+}

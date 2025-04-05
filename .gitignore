@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+shared/.venv/
+*.lock
+
+# IDEs
+.idea
+
+# Images
+*.iso
+*.raw
+*.img
+*.qcow2
+*.vmdk
+shared/vms/*
+
+# Results
+shared/results/*
