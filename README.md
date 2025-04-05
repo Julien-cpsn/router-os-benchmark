@@ -13,7 +13,7 @@ This repository aims to benchmark router operating system network performances. 
 1. Download the latest mininet vm, e.g. `mininet-2.3.0-210211-ubuntu-20.04.1-legacy-server-amd64-ovf.zip`
 2. Unzip it
 3. Move `mininet-vm-x86_64.vmdk` to the root of this directory
-4. Insure you have [qemu](https://www.qemu.org/download/) installed with `qemu-system-x86_64` available
+4. Ensure you have [qemu](https://www.qemu.org/download/) installed with `qemu-system-x86_64` available
 
 ## How to use
 
