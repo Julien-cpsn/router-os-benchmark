@@ -1,7 +1,7 @@
 import subprocess
 from glob import glob
 
-from constants import EXPERIMENT_NAME, EXPERIMENT_DURATION, ROUTER_VCPU, ROUTER_RAM, ROUTER_NIC
+from src.constants import EXPERIMENT_NAME, EXPERIMENT_DURATION, ROUTER_VCPU, ROUTER_RAM, ROUTER_NIC
 
 match EXPERIMENT_NAME:
     case 'rrul':

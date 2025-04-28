@@ -1,7 +1,6 @@
 import json
 import jsonschema
 from loguru import logger
-
 schema = {
     'type': 'object',
     'properties': {
@@ -38,19 +37,20 @@ schema = {
                 'type': 'object',
                 'properties': {
                     'input_ready': {'type': 'string'},
+                    'trigger_sequence': {'type': ['string', 'null']},
                     'login': {'type': ['string', 'null']},
                     'password': {'type': ['string', 'null']},
-                    'trigger_sequence': {'type': ['string', 'null']},
                     'configuration': {'type': ['string', 'array']},
                     'interface_prefix': {'type': 'string'},
                     'image_path': {'type': 'string'}
                 },
-                'required': ['login', 'password', 'trigger_sequence', 'configuration', 'interface_prefix', 'image_path']
+                'required': ['input_ready', 'login', 'password', 'trigger_sequence', 'configuration', 'interface_prefix', 'image_path']
             }
         },
     },
     'required': ['config', 'experiment', 'os_list'],
 }
+
 
 with open('experiments.json', 'r') as f:
     json_data = json.load(f)

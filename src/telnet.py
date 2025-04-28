@@ -1,12 +1,11 @@
 import sys
-from time import sleep
 from typing import Optional
 
 import pexpect
 from gns3fy import Node
 from loguru import logger
 
-from constants import EXPERIMENT_DURATION, EXPERIMENT_NAME, SERVER_IP, CLIENT_SIDE_NETWORK, SERVER_SIDE_NETWORK, ROUTER_SERVER_SIDE_IP, ROUTER_CLIENT_SIDE_IP
+from src.constants import EXPERIMENT_DURATION, EXPERIMENT_NAME, SERVER_IP, CLIENT_SIDE_NETWORK, SERVER_SIDE_NETWORK, ROUTER_SERVER_SIDE_IP, ROUTER_CLIENT_SIDE_IP
 
 
 def connect(node: Node, rules: list[list[str]], log: bool):
@@ -33,7 +32,6 @@ def connect(node: Node, rules: list[list[str]], log: bool):
 
     client.logfile = None
     client.sendline()
-    sleep(1)
     print('\r', end='', flush=True)
     logger.info('Telnet end transmission')
 
@@ -50,8 +48,8 @@ def client_test_rules(test_title: str) -> list:
     return [
         (':~', 'mkdir /mnt/shared'),
         (':~', 'mount -t 9p -o trans=virtio,version=9p2000.L shared_folder /mnt/shared'),
-        (':~', f'flent {EXPERIMENT_NAME} -t {test_title} -l {EXPERIMENT_DURATION} -H {SERVER_IP} -D /mnt/shared'),
-        (':~', None),
+        (':~', f'flent {EXPERIMENT_NAME} -t {test_title} -l {EXPERIMENT_DURATION} -H {SERVER_IP}'),
+        (':~', 'cp *.flent.gz /mnt/shared'),
     ]
 
 def router_rules(input_ready: str, login: Optional[str], password: Optional[str], trigger_sequence: Optional[str], configuration: str|list, interface_prefix: str) -> list:

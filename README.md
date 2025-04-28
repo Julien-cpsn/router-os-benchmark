@@ -53,9 +53,9 @@ Example `experiments.json` file
   "os_list": {
     "MikroTik": {
       "input_ready": " >",
+      "trigger_sequence": null,
       "login": "admin",
       "password": "test",
-      "trigger_sequence": null,
       "configuration": [
         "ip address add address={ROUTER_CLIENT_SIDE_IP} interface={INTERFACE_PREFIX}1",
         "ip address add address={ROUTER_SERVER_SIDE_IP} interface={INTERFACE_PREFIX}2",
@@ -66,9 +66,10 @@ Example `experiments.json` file
       "image_path": "/path/to/chr-6.49.18.img"
     },
     "VyOS": {
+      "input_ready": ":~",
+      "trigger_sequence": null,
       "login": "vyos",
       "password": "vyos",
-      "trigger_sequence": null,
       "configuration": "iproute2",
       "interface_prefix": "ens",
       "image_path": "/path/to/vyos-2025.04.04-0018-rolling-generic-amd64.iso"

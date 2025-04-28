@@ -4,7 +4,7 @@ from uuid import uuid4
 from gns3fy import Gns3Connector
 from loguru import logger
 
-from constants import ROUTER_VCPU, ROUTER_RAM, GUEST_VCPU, GUEST_RAM, ROUTER_NIC
+from src.constants import ROUTER_VCPU, ROUTER_RAM, GUEST_VCPU, GUEST_RAM, ROUTER_NIC
 
 
 def generate_template(gns3: Gns3Connector, name: str, image_name: str):

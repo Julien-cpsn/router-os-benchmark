@@ -1,4 +1,4 @@
-from experiments_file import experiments
+from src.experiments_file import experiments
 
 GNS3_SERVER_URL = experiments['config']['gns3_url']
 GNS3_SERVER_USERNAME = experiments['config']['gns3_server_username']

@@ -1,4 +1,4 @@
-from gns3fy import Gns3Connector, Link, Node
+from gns3fy import Gns3Connector, Node
 from loguru import logger
 
 

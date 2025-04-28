@@ -1,7 +1,7 @@
 from gns3fy import Gns3Connector
 from loguru import logger
 
-from constants import PROJECT_NAME
+from src.constants import PROJECT_NAME
 
 
 def create_project(gns3: Gns3Connector, os_name: str, run_index: int) -> dict:

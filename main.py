@@ -3,17 +3,17 @@ import os
 from gns3fy import Gns3Connector
 from loguru import logger
 
-from config import get_gns3_images_path
-from constants import GNS3_SERVER_URL, GNS3_SERVER_USERNAME, GNS3_SERVER_PASSWORD, SERVER_IP, ROUTER_CLIENT_SIDE_IP, \
+from src.config import get_gns3_images_path
+from src.constants import GNS3_SERVER_URL, GNS3_SERVER_USERNAME, GNS3_SERVER_PASSWORD, SERVER_IP, ROUTER_CLIENT_SIDE_IP, \
     ROUTER_SERVER_SIDE_IP, CLIENT_SIDE_NETWORK, SERVER_SIDE_NETWORK, CLIENT_IP, OS_LIST, NUMBER_OF_RUNS, ROUTER_NIC, \
     EXPERIMENT_DURATION, ROUTER_VCPU, ROUTER_RAM, GUEST_IMAGE_PATH
-from images import find_or_upload_image
-from links import link_nodes
-from logger import def_context
-from nodes import create_node
-from projects import create_project, find_and_delete_projects
-from telnet import connect, base_guest_rules, client_test_rules, router_rules
-from templates import generate_template, generate_debian_template
+from src.images import find_or_upload_image
+from src.links import link_nodes
+from src.logger import def_context
+from src.nodes import create_node
+from src.projects import create_project, find_and_delete_projects
+from src.telnet import connect, base_guest_rules, client_test_rules, router_rules
+from src.templates import generate_template, generate_debian_template
 
 with def_context(name="GNS3", part='Config'):
     images_path = get_gns3_images_path()
@@ -29,7 +29,7 @@ with def_context(name="GNS3", part='Config'):
 
 try:
     for os_name in OS_LIST:
-        os_input_ready = OS_LIST[os_name]['input_ready'] if 'input_ready' in OS_LIST[os_name] else ':~'
+        os_input_ready = OS_LIST[os_name]['input_ready']
         os_login = OS_LIST[os_name]['login']
         os_password = OS_LIST[os_name]['password']
         trigger_sequence = OS_LIST[os_name]['trigger_sequence']
@@ -98,10 +98,19 @@ try:
             server.stop()
 except KeyboardInterrupt as e:
     with def_context(name="GNS3", part='Exiting'):
+        print('\r', end='', flush=True)
         logger.info("Exiting...")
         try:
             router.stop()
+        except:
+            print()
+
+        try:
             client.stop()
+        except:
+            print()
+
+        try:
             server.stop()
         except:
             print()
