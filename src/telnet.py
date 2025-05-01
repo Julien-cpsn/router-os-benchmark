@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import Optional
 
@@ -5,54 +6,78 @@ import pexpect
 from gns3fy import Node
 from loguru import logger
 
-from src.constants import EXPERIMENT_DURATION, EXPERIMENT_NAME, SERVER_IP, CLIENT_SIDE_NETWORK, SERVER_SIDE_NETWORK, ROUTER_SERVER_SIDE_IP, ROUTER_CLIENT_SIDE_IP
+from src.logger import def_context
 
 
-def connect(node: Node, rules: list[list[str]], log: bool):
-    logger.info(f'Telnet start transmission')
+def connect(context_name: str, section: str, part: str, node: Node, rules: list[list[str]], log: bool):
+    with def_context(name=context_name, section=section, part=part):
+        logger.info(f'Telnet start transmission')
 
-    client = pexpect.spawn(f'telnet {node.console_host} {node.console}')
+        try:
+            client = pexpect.spawn(f'telnet {node.console_host} {node.console}')
 
-    client.logfile = None
-    #client.logfile = sys.stdout.buffer
-    client.sendline()
+            client.logfile = None
+            #client.logfile = sys.stdout.buffer
+            client.sendline()
 
-    for expect, send in rules:
-        if log and client.logfile_read is None and expect == ':~':
-            client.logfile_read = sys.stdout.buffer
-        client.expect(expect, timeout=EXPERIMENT_DURATION*10)
+            for expect, send in rules:
+                if log and client.logfile_read is None and expect == ':~':
+                    client.logfile_read = sys.stdout.buffer
+                client.expect(expect, timeout=600)
 
-        if send is None:
-            break
+                if send is None:
+                    break
 
-        if send != '\n':
+                if send != '\n':
+                    print('\r', end='', flush=True)
+                    logger.info(f'> {send}')
+
+                client.sendline(send)
+
+            client.logfile = None
+            client.sendline()
+            client.close(force=True)
             print('\r', end='', flush=True)
-            logger.info(f'> {send}')
-        client.sendline(send)
+            logger.info('Telnet end transmission')
+        except Exception as e:
+            logger.error(e)
+            exit(1)
 
-    client.logfile = None
-    client.sendline()
-    print('\r', end='', flush=True)
-    logger.info('Telnet end transmission')
-
-def base_guest_rules(ip_address: str, router_ip: str, distant_network: str) -> list:
+def guest_base_config(ip_address: str) -> list:
     return [
         ('ogin:', 'root'),
         ('assword:', 'debian'),
         (':~', 'ip link set ens4 up'),
         (':~', f'ip address add {ip_address}/24 dev ens4'),
-        (':~', f'ip route add {distant_network}/24 via {router_ip} dev ens4'),
     ]
 
-def client_test_rules(test_title: str) -> list:
+def guest_add_route(distant_network: str, router_ip: str) -> list:
+    return [
+        (':~', f'ip route add {distant_network}/24 via {router_ip} dev ens4')
+    ]
+
+def client_test_rules(experiment_name: str, test: str, test_name: str, duration: int, server_ip: str, os_name: Optional[str]) -> list:
+    local_path = f'shared/{experiment_name}/{test_name}'
+    shared_path = f'/mnt/shared/{experiment_name}/{test_name}'
+
+    if os_name is not None:
+        local_path += f'/{os_name}'
+        shared_path += f'/{os_name}'
+        test_tile = os_name
+    else:
+        test_tile = experiment_name
+
+    os.makedirs(local_path, exist_ok=True)
+
     return [
         (':~', 'mkdir /mnt/shared'),
         (':~', 'mount -t 9p -o trans=virtio,version=9p2000.L shared_folder /mnt/shared'),
-        (':~', f'flent {EXPERIMENT_NAME} -t {test_title} -l {EXPERIMENT_DURATION} -H {SERVER_IP}'),
-        (':~', 'cp *.flent.gz /mnt/shared'),
+        (':~', f'flent {test} -t {test_tile} -l {duration} -H {server_ip}'),
+        (':~', f'cp *.flent.gz {shared_path}'),
+        (':~', None),
     ]
 
-def router_rules(input_ready: str, login: Optional[str], password: Optional[str], trigger_sequence: Optional[str], configuration: str|list, interface_prefix: str) -> list:
+def router_login_rules(input_ready: str, login: Optional[str], password: Optional[str], trigger_sequence: Optional[str], configuration: Optional[str|dict]) -> list:
     rules = []
 
     if trigger_sequence is not None:
@@ -63,39 +88,82 @@ def router_rules(input_ready: str, login: Optional[str], password: Optional[str]
     if password is not None:
         rules += [('assword:', password)]
 
+    if configuration is None:
+        return rules
 
-    match configuration:
-        case 'freebsd' | 'openbsd':
+    if isinstance(configuration, str):
+        match configuration:
+            case 'freebsd' | 'openbsd':
+                rules += []
+            case 'iproute2':
+                rules += [
+                    (input_ready, 'sudo -i'),
+                    (input_ready, 'echo 1 > /proc/sys/net/ipv4/ip_forward'),
+                ]
+    else:
+        start = configuration['start']
+        for command in start:
             rules += [
-                (input_ready, f'ifconfig {interface_prefix}0 inet {ROUTER_CLIENT_SIDE_IP} netmask 255.255.255.0'),
-                (input_ready, f'ifconfig {interface_prefix}1 inet {ROUTER_SERVER_SIDE_IP} netmask 255.255.255.0'),
-                (input_ready, f'route add -net {CLIENT_SIDE_NETWORK}/24 -interface {interface_prefix}1'),
-                (input_ready, f'route add -net {SERVER_SIDE_NETWORK}/24 -interface {interface_prefix}0'),
+                (input_ready, preformat_custom_command(command=command)),
             ]
-        case 'iproute2':
-            rules += [
-                (input_ready, 'sudo -i'),
-                (input_ready, f'ip link set {interface_prefix}3 up'),
-                (input_ready, f'ip link set {interface_prefix}4 up'),
-                (input_ready, f'ip address add {ROUTER_CLIENT_SIDE_IP}/24 dev {interface_prefix}3'),
-                (input_ready, f'ip address add {ROUTER_SERVER_SIDE_IP}/24 dev {interface_prefix}4'),
-                (input_ready, 'echo 1 > /proc/sys/net/ipv4/ip_forward'),
-            ]
-        case 'none':
-            rules += []
-        case _:
-            logger.warning('Unknown OS network stack configuration type, using the provided commands')
-            for command in configuration:
-                command = format_custom_command(command, interface_prefix)
-                rules += [(input_ready, command)]
+
 
     return rules
 
-def format_custom_command(command: str, interface_prefix: str) -> str:
+def router_add_ip_address_rules(input_ready: str, configuration: Optional[str|dict], ip_address: str, interface_prefix: str, interfaces_start_at: int, interface: int) -> list:
+    if configuration is None:
+        return []
+
+    rules = []
+
+    if isinstance(configuration, str):
+        match configuration:
+            case 'freebsd' | 'openbsd':
+                rules += [
+                    (input_ready, f'ifconfig {interface_prefix}{interfaces_start_at + interface} inet {ip_address} netmask 255.255.255.0'),
+                ]
+            case 'iproute2':
+                rules += [
+                    (input_ready, f'ip link set dev {interface_prefix}{interfaces_start_at +interface} up'),
+                    (input_ready, f'ip address add {ip_address}/24 dev {interface_prefix}{interfaces_start_at +interface}'),
+                ]
+    else:
+        add_ip_address_commands = configuration['add_ip_address']
+        for command in add_ip_address_commands:
+            rules += [
+                (input_ready, preformat_custom_command(command=command, ip_address=ip_address, interface_prefix=interface_prefix, interface=(interfaces_start_at + interface))),
+            ]
+
+    return rules
+
+def router_add_ip_route_rules(input_ready: str, configuration: Optional[str|dict], distant_network: str, gateway: str, interface_prefix: str, interfaces_start_at: int, interface: int) -> list:
+    if configuration is None:
+        return []
+
+    rules = []
+
+    if isinstance(configuration, str):
+        match configuration:
+            case 'freebsd' | 'openbsd':
+                rules += [
+                    (input_ready, f'route add -net {distant_network}/24 -interface {interface_prefix}{interfaces_start_at + interface}'),
+                ]
+            case 'iproute2':
+                rules += []
+    else:
+        add_ip_route_commands = configuration['add_ip_route']
+        for command in add_ip_route_commands:
+            rules += [
+                (input_ready, preformat_custom_command(command=command, distant_network=distant_network, gateway=gateway, interface_prefix=interface_prefix, interface=(interfaces_start_at + interface))),
+            ]
+
+    return rules
+
+def preformat_custom_command(command: str, ip_address: Optional[str] = None, distant_network: Optional[str] = None, gateway: Optional[str] = None, interface_prefix: Optional[str] = None, interface: Optional[int] = None) -> str:
     return (command
-        .replace("{INTERFACE_PREFIX}", interface_prefix)
-        .replace("{ROUTER_CLIENT_SIDE_IP}", ROUTER_CLIENT_SIDE_IP)
-        .replace("{ROUTER_SERVER_SIDE_IP}", ROUTER_SERVER_SIDE_IP)
-        .replace("{CLIENT_SIDE_NETWORK}", CLIENT_SIDE_NETWORK)
-        .replace("{SERVER_SIDE_NETWORK}", SERVER_SIDE_NETWORK)
-    ) + "\r"
+        .replace('{IP_ADDRESS}', ip_address if ip_address is not None else '')
+        .replace('{DISTANT_NETWORK}', distant_network if distant_network is not None else '')
+        .replace('{GATEWAY}', gateway if gateway is not None else '')
+        .replace('{INTERFACE_PREFIX}', interface_prefix if interface_prefix is not None else '')
+        .replace('{INTERFACE}', str(interface)  if interface is not None else '')
+    ) + '\r'

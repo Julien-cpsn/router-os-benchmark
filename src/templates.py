@@ -4,19 +4,27 @@ from uuid import uuid4
 from gns3fy import Gns3Connector
 from loguru import logger
 
-from src.constants import ROUTER_VCPU, ROUTER_RAM, GUEST_VCPU, GUEST_RAM, ROUTER_NIC
 
+def find_and_delete_templates(gns3: Gns3Connector, template_prefix: str):
+  templates = gns3.get_templates()
 
-def generate_template(gns3: Gns3Connector, name: str, image_name: str):
-  try:
-    logger.info('Deleting template if exists')
-    gns3.delete_template(name)
-  except Exception as e:
-    logger.warning(e)
+  for template in templates:
+    if template['name'].startswith(template_prefix):
+      logger.info(f'Deleting template {template['name']}')
+
+      try:
+        gns3.delete_template(name=template['name'])
+      except Exception as e:
+        if e.args[0] != "'NoneType' object is not subscriptable":
+          logger.error(e)
+          exit(1)
+
+def generate_router_template(gns3: Gns3Connector, template_prefix: str, node_name: str, os_name: str, image_name: str, vcpu: int, ram: int, nic: str, adapters: int):
+  template_name = f'{template_prefix} {os_name} {node_name}'
 
   template = {
-    "adapter_type": ROUTER_NIC,
-    "adapters": 6,
+    "adapter_type": nic,
+    "adapters": adapters,
     "bios_image": "",
     "boot_priority": "c",
     "builtin": False,
@@ -26,7 +34,7 @@ def generate_template(gns3: Gns3Connector, name: str, image_name: str):
     "console_auto_start": False,
     "console_type": "telnet",
     "cpu_throttling": 0,
-    "cpus": ROUTER_VCPU,
+    "cpus": vcpu,
     "create_config_disk": False,
     "custom_adapters": [],
     "default_name_format": "{name}-{0}",
@@ -45,7 +53,7 @@ def generate_template(gns3: Gns3Connector, name: str, image_name: str):
     "legacy_networking": False,
     "linked_clone": True,
     "mac_address": "",
-    "name": name,
+    "name": template_name,
     "on_close": "power_off",
     "options": '',
     "platform": '',
@@ -53,7 +61,7 @@ def generate_template(gns3: Gns3Connector, name: str, image_name: str):
     "port_segment_size": 0,
     "process_priority": "normal",
     "qemu_path": "qemu-system-x86_64",
-    "ram": ROUTER_RAM,
+    "ram": ram,
     "replicate_network_connection_state": True,
     "symbol": ":/symbols/classic/router.svg",
     "template_id": str(uuid4()),
@@ -64,19 +72,14 @@ def generate_template(gns3: Gns3Connector, name: str, image_name: str):
   }
 
   template = gns3.create_template(**template)
-  logger.info('Generated template')
+  logger.info(f'Generated {template_name} template')
 
   return template
 
-def generate_debian_template(gns3: Gns3Connector, image_name: str, router_os_name: str):
-  try:
-    logger.info('Deleting template if exists')
-    gns3.delete_template("Debian guest")
-  except Exception as e:
-    logger.warning(e)
+def generate_guest_template(gns3: Gns3Connector, template_prefix: str, name: str, image_name: str, vcpu: int, ram: int):
+  template_name = f'{template_prefix} {name}'
 
-  shared_folder_path = f'{os.getcwd()}/shared/{router_os_name}'
-  os.makedirs(shared_folder_path, exist_ok=True)
+  shared_folder_path = f'{os.getcwd()}/shared/'
 
   template = {
     "adapter_type": "virtio-net-pci",
@@ -90,7 +93,7 @@ def generate_debian_template(gns3: Gns3Connector, image_name: str, router_os_nam
     "console_auto_start": False,
     "console_type": "telnet",
     "cpu_throttling": 0,
-    "cpus": GUEST_VCPU,
+    "cpus": vcpu,
     "create_config_disk": False,
     "custom_adapters": [],
     "default_name_format": "{name}-{0}",
@@ -109,7 +112,7 @@ def generate_debian_template(gns3: Gns3Connector, image_name: str, router_os_nam
     "legacy_networking": False,
     "linked_clone": True,
     "mac_address": "",
-    "name": "Debian guest",
+    "name": template_name,
     "on_close": "power_off",
     "options": f'-virtfs local,path="{shared_folder_path}",mount_tag=shared_folder,id=shared_folder,security_model=mapped-xattr',
     "platform": "",
@@ -117,7 +120,7 @@ def generate_debian_template(gns3: Gns3Connector, image_name: str, router_os_nam
     "port_segment_size": 0,
     "process_priority": "normal",
     "qemu_path": "qemu-system-x86_64",
-    "ram": GUEST_RAM,
+    "ram": ram,
     "replicate_network_connection_state": True,
     "symbol": "linux_guest.svg",
     "template_id": str(uuid4()),
@@ -128,6 +131,6 @@ def generate_debian_template(gns3: Gns3Connector, image_name: str, router_os_nam
   }
 
   template = gns3.create_template(**template)
-  logger.info('Generated Debian template')
+  logger.info(f'Generated {template_name} template')
 
   return template

@@ -74,17 +74,11 @@ wheels = [
 
 [[package]]
 name = "gns3fy"
-version = "0.7.2"
-source = { directory = "../../../../../../Programmation/python/gns3fy" }
+version = "0.8.0"
+source = { git = "https://github.com/Julien-cpsn/gns3fy#6e37c4ec5651f9ce9c39610f4a3d9f0762b20417" }
 dependencies = [
     { name = "pydantic" },
     { name = "requests" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pydantic", specifier = ">=1.0" },
-    { name = "requests", specifier = ">=2.22.0" },
 ]
 
 [[package]]
@@ -256,7 +250,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "gns3fy", directory = "../../../../../../Programmation/python/gns3fy" },
+    { name = "gns3fy", git = "https://github.com/Julien-cpsn/gns3fy" },
     { name = "jsonschema", specifier = ">=4.23.0" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pexpect", specifier = ">=4.9.0" },

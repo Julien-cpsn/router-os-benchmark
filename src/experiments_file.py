@@ -1,59 +1,134 @@
 import json
 import jsonschema
 from loguru import logger
+
 schema = {
+    '$schema': 'http://json-schema.org/draft-07/schema#',
     'type': 'object',
+    'required': ['experiment_name', 'plot_legend_when_merged', 'config', 'network', 'tests', 'os_list'],
     'properties': {
+        'experiment_name': {'type': 'string'},
+        'plot_legend_when_merged': {'type': ['string', 'null']},
         'config': {
             'type': 'object',
+            'required': ['project_name', 'template_prefix', 'guest_image_path', 'gns3'],
             'properties': {
-                'gns3_url': {'type': 'string'},
-                'gns3_server_username': {'type': 'string'},
-                'gns3_server_password': {'type': 'string'},
                 'project_name': {'type': 'string'},
+                'template_prefix': {'type': 'string'},
                 'guest_image_path': {'type': 'string'},
+                'gns3': {
+                    'type': 'object',
+                    'properties': {
+                        'url': {'type': 'string', 'format': 'uri'},
+                        'server_username': {'type': 'string'},
+                        'server_password': {'type': 'string'},
+                    },
+                    'required': ['url', 'server_username', 'server_password'],
+                },
             },
-            'required': ['gns3_url', 'gns3_server_username', 'gns3_server_password', 'project_name', 'guest_image_path'],
         },
-        'experiment': {
+        'network': {
             'type': 'object',
+            'required': ['nodes', 'links'],
             'properties': {
-                'name': {'type': 'string'},
-                'duration': {'type': 'integer'},
-                'runs': {'type': 'integer'},
-                'router_vcpu': {'type': 'integer'},
-                'router_ram': {'type': 'integer'},
-                'router_nic': {'type': 'string'},
-                'guest_vcpu': {'type': 'integer'},
-                'guest_ram': {'type': 'integer'},
-                'client_side_network': {'type': 'string'},
-                'server_side_network': {'type': 'string'},
+                'nodes': {
+                    'type': 'object',
+                    'additionalProperties': {
+                        'type': 'object',
+                        'required': ['type', 'vcpu', 'ram'],
+                        'properties': {
+                            'type': {'enum': ['guest', 'router']},
+                            'vcpu': {'type': 'integer', 'minimum': 1},
+                            'ram': {'type': 'integer', 'minimum': 1},
+                            'os': {'type': ['string', 'null']},
+                            'ip': {'type': 'string', 'format': 'ip-address'},
+                            'nic': {'enum': ['e1000', 'i82551', 'i82557b', 'i82559er', 'ne2k_pci', 'ne2k_isa', 'pcnet', 'rtl8139', 'virtio']},
+                            'adapters': {'type': 'integer', 'minimum': 1},
+                            'ips': {
+                                'type': 'array',
+                                'additionalProperties': {
+                                    'adapter': {'type': 'integer', 'minimum': 0},
+                                    'ip': {'type': 'string', 'format': 'ip-address'},
+                                }
+                            }
+                        },
+                        'if': {'properties': {'type': {'const': 'router'}}},
+                        'then': {'required': ['os', 'nic', 'adapters', 'ips']},
+                        'else': {'required': ['ip']},
+                    }
+                },
+                'links': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'required': ['node_a', 'adapter_a', 'node_b', 'adapter_b'],
+                        'properties': {
+                            'node_a': {'type': 'string'},
+                            'adapter_a': {'type': 'integer', 'minimum': 0},
+                            'node_b': {'type': 'string'},
+                            'adapter_b': {'type': 'integer', 'minimum': 0},
+                        }
+                    }
+                }
             },
-            'required': ['name', 'duration', 'runs', 'router_vcpu', 'router_ram', 'router_nic', 'guest_vcpu', 'guest_ram', 'client_side_network', 'server_side_network'],
+        },
+        'tests': {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'name': {'type': 'string'},
+                    'test': {'enum': ['bursts', 'bursts_11e', 'cisco_5tcpup', 'cisco_5tcpup_2udpflood', 'cubic_bbr', 'cubic_cdg', 'cubic_dctcp', 'cubic_ledbat', 'cubic_ledbat_1', 'cubic_reno', 'cubic_westwood', 'dashtest', 'dslreports_8dn', 'http', 'http-1down', 'http-1up', 'http-rrul', 'iterated_bidirectional', 'ledbat_cubic_1', 'ping', 'qdisc-stats', 'reno_cubic_westwood_cdg', 'reno_cubic_westwood_ledbat', 'reno_cubic_westwood_lp', 'rrul', 'rrul46', 'rrul46compete', 'rrul_100_up', 'rrul_50_down', 'rrul_50_up', 'rrul_be', 'rrul_be_iperf', 'rrul_be_nflows', 'rrul_cs8', 'rrul_icmp', 'rrul_noclassification', 'rrul_prio', 'rrul_torrent', 'rrul_up', 'rrul_var', 'rtt_fair', 'rtt_fair4be', 'rtt_fair6be', 'rtt_fair_up', 'rtt_fair_var', 'rtt_fair_var_down', 'rtt_fair_var_mixed', 'rtt_fair_var_up', 'sctp_vs_tcp', 'tcp_12down', 'tcp_12up', 'tcp_1down', 'tcp_1up', 'tcp_1up_noping', 'tcp_2down', 'tcp_2up', 'tcp_2up_delay', 'tcp_2up_square', 'tcp_2up_square_westwood', 'tcp_4down', 'tcp_4up', 'tcp_4up_squarewave', 'tcp_50up', 'tcp_6down', 'tcp_6up', 'tcp_8down', 'tcp_8up', 'tcp_bidirectional', 'tcp_download', 'tcp_ndown', 'tcp_nup', 'tcp_upload', 'tcp_upload_1000', 'tcp_upload_prio', 'udp_flood', 'udp_flood_var_up', 'udp_flood_var_up_stagger', 'voip', 'voip-1up', 'voip-rrul']},
+                    'fire_at': {'type': 'integer', 'minimum': 0},
+                    'duration': {'type': 'integer', 'minimum': 1},
+                    'from': {'type': 'string'},
+                    'to': {'type': 'string'},
+                },
+                'required': ['name', 'fire_at', 'duration', 'from', 'to'],
+            }
         },
         'os_list': {
             'type': 'object',
             'additionalProperties': {
                 'type': 'object',
+                'required': ['input_ready', 'login', 'password', 'trigger_sequence', 'configuration', 'interface_prefix', 'interfaces_start_at', 'image_path'],
                 'properties': {
                     'input_ready': {'type': 'string'},
                     'trigger_sequence': {'type': ['string', 'null']},
                     'login': {'type': ['string', 'null']},
                     'password': {'type': ['string', 'null']},
-                    'configuration': {'type': ['string', 'array']},
+                    'configuration': {
+                        'oneOf': [
+                            {
+                                'type': 'null'
+                            },
+                            {
+                                'type': ['string'],
+                                'enum': ['iproute2', 'freebsd', 'openbsd']
+                            },
+                            {
+                                'type': 'object',
+                                'required': ['start', 'add_ip_address', 'add_ip_route'],
+                                'properties': {
+                                    'start': {'type': 'array'},
+                                    'add_ip_address': {'type': 'array'},
+                                    'add_ip_route': {'type': 'array'},
+                                },
+                            }
+                        ],
+                    },
                     'interface_prefix': {'type': 'string'},
+                    'interfaces_start_at': {'type': 'integer', 'minimum': 0},
                     'image_path': {'type': 'string'}
                 },
-                'required': ['input_ready', 'login', 'password', 'trigger_sequence', 'configuration', 'interface_prefix', 'image_path']
             }
         },
     },
-    'required': ['config', 'experiment', 'os_list'],
 }
 
 
-with open('experiments.json', 'r') as f:
-    json_data = json.load(f)
+def load_experiment_data(experiment_file) -> dict:
+    json_data = json.load(experiment_file)
 
     try:
         jsonschema.validate(instance=json_data, schema=schema)
@@ -61,4 +136,4 @@ with open('experiments.json', 'r') as f:
         logger.error(e)
         exit(1)
 
-    experiments = json_data
+    return json_data

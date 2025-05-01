@@ -1,0 +1,122 @@
+{
+  "experiment_name": "Simple topology all OSes",
+  "plot_legend_when_merged": null,
+  "config": {
+    "project_name": "router-os-benchmark",
+    "template_prefix": "Benchmark",
+    "guest_image_path": "/home/julien/Programmation/vm/Debian/tmp/debian-bookworm.qcow2",
+    "gns3": {
+      "url": "http://127.0.0.1:3080",
+      "server_username": "admin",
+      "server_password": "gns3"
+    }
+  },
+  "network": {
+    "nodes": {
+      "Client 1": {
+        "type": "guest",
+        "vcpu": 1,
+        "ram": 1024,
+        "ip": "10.0.1.2"
+      },
+      "Server 1": {
+        "type": "guest",
+        "vcpu": 1,
+        "ram": 1024,
+        "ip": "10.0.2.2"
+      },
+      "Router 1": {
+        "type": "router",
+        "vcpu": 2,
+        "ram": 2048,
+        "os": null,
+        "nic": "e1000",
+        "adapters": 6,
+        "ips": [
+          { "adapter": 3, "ip": "10.0.1.1" },
+          { "adapter": 4, "ip": "10.0.2.1" }
+        ]
+      }
+    },
+    "links": [
+      { "node_a": "Client 1", "adapter_a": 0, "node_b": "Router 1", "adapter_b": 3 },
+      { "node_a": "Server 1", "adapter_a": 0, "node_b": "Router 1", "adapter_b": 4 }
+    ]
+  },
+  "tests": [
+    {
+      "name": "test1",
+      "test": "rrul",
+      "fire_at": 0,
+      "duration": 60,
+      "from": "Client 1",
+      "to": "Server 1"
+    }
+  ],
+  "os_list": {
+    "Debian": {
+      "input_ready": ":~",
+      "trigger_sequence": null,
+      "login": "root",
+      "password": "debian",
+      "configuration": "iproute2",
+      "interface_prefix": "ens",
+      "interfaces_start_at": 3,
+      "image_path": "/home/julien/Programmation/vm/Debian/tmp/debian-bookworm.qcow2"
+    },
+    "MikroTik": {
+      "input_ready": " >",
+      "trigger_sequence": null,
+      "login": "admin",
+      "password": "test",
+      "configuration": {
+        "start": [],
+        "add_ip_address": ["ip address add address={IP_ADDRESS} interface={INTERFACE_PREFIX}{INTERFACE}"],
+        "add_ip_route": ["ip route add dst-address={DISTANT_NETWORK}/24 gateway={INTERFACE_PREFIX}{INTERFACE}"]
+      },
+      "interface_prefix": "ether",
+      "interfaces_start_at": 1,
+      "image_path": "/home/julien/Programmation/vm/MikroTik/chr-6.49.18.img"
+    },
+    "VyOS": {
+      "input_ready": ":~",
+      "trigger_sequence": null,
+      "login": "vyos",
+      "password": "vyos",
+      "configuration": "iproute2",
+      "interface_prefix": "eth",
+      "interfaces_start_at": 0,
+      "image_path": "/home/julien/Programmation/vm/VyOS/vyos-2025.04.04-0018-rolling-generic-amd64.iso"
+    },
+    "BSDRP": {
+      "input_ready": ":~",
+      "trigger_sequence": null,
+      "login": "root",
+      "password": null,
+      "configuration": "freebsd",
+      "interface_prefix": "em",
+      "interfaces_start_at": 0,
+      "image_path": "/home/julien/Programmation/vm/BSDRP/BSDRP-1.993-full-amd64-serial.img"
+    },
+    "SONiC": {
+      "input_ready": ":~",
+      "trigger_sequence": null,
+      "login": "admin",
+      "password": "YourPaSsWoRd",
+      "configuration": "iproute2",
+      "interface_prefix": "eth",
+      "interfaces_start_at": 0,
+      "image_path": "/home/julien/Programmation/vm/SONiC/sonic-vs-202411.img"
+    },
+    "OpenWRT": {
+      "input_ready": ":~",
+      "trigger_sequence": "entered promiscuous mode",
+      "login": null,
+      "password": null,
+      "configuration": "iproute2",
+      "interface_prefix": "eth",
+      "interfaces_start_at": 0,
+      "image_path": "/home/julien/Programmation/vm/OpenWRT/openwrt-24.10.0-x86-64-generic-squashfs-combined-efi.img"
+    }
+  }
+}
