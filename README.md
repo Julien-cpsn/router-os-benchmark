@@ -133,6 +133,9 @@ Example experiment file at `experiments/my_experiment.json`
 
 ### 4. Run the experiments
 
+> [!TIP]
+> You can use both of `-i` (for individual file input) and `-d` (for directory input) many times
+
 One at a time:
 
 ```shell
@@ -160,10 +163,15 @@ Many:
 
 ## Plot example
 
+Realtime Response Under Load
+
+### All OSes
 ![](./plots/Simple-topology-all-OSes/test1/box_totals.svg)
 ![](./plots/Simple-topology-all-OSes/test1/icmp_cdf.svg)
-![](./plots/merged-Simple-topology-VyOS-RTL8139-Simple-topology-VyOS/test1/box_totals.svg)
-![](./plots/merged-Simple-topology-VyOS-RTL8139-Simple-topology-VyOS/test1/icmp_cdf.svg)
+
+### Debian
+![](./plots/merged-BSDRP-HR-E1000-RIP-BSDRP-HR-RTL8139-RIP-BSDRP-HR-VirtIO-RIP-BSDRP-LR-E1000-RIP-BSDRP-LR-RTL8139-RIP-BSDRP-LR-VirtIO-RIP-BSDRP-MR-E1000-RIP-BSDRP-MR-RTL8139-RIP-BSDRP-MR-VirtIO-RIP/test1/box_totals.svg)
+![](./plots/merged-BSDRP-HR-E1000-RIP-BSDRP-HR-RTL8139-RIP-BSDRP-HR-VirtIO-RIP-BSDRP-LR-E1000-RIP-BSDRP-LR-RTL8139-RIP-BSDRP-LR-VirtIO-RIP-BSDRP-MR-E1000-RIP-BSDRP-MR-RTL8139-RIP-BSDRP-MR-VirtIO-RIP/test1/icmp_cdf.svg)
 
 ## Others
 
@@ -259,13 +267,18 @@ from `flent --list-tests`
 from https://en.wikibooks.org/wiki/QEMU/Devices/Network
 
 ```
-e1000	  : 10/100/1000Mb/s Intel 82540em / PRO/1000
-i82551	  : 10/100Mb/s      Intel 10/100 Mbps Fast Ethernet
-i82557b	  : 10/100Mb/s      Intel 10/100 Mbps Fast Ethernet
-i82559er  : 10/100Mb/s      Intel 10/100 Mbps Fast Ethernet
-ne2k_pci  : 10Mb/s          RTL8029 - NE2000 PCI
-ne2k_isa  : 10Mb/s          NE2000 Compatible
-pcnet     : 10/100Mb/s      AMD PCnet FAST III Ethernet
-rtl8139   : 10/100Mb/s      Realtek Fast Ethernet
-virtio    : 1Gb/s           Virtual High Performance Ethernet card (see Virtio)
+e1000, e1000e	  : 10/100/1000Mb/s Intel 82540em / PRO/1000
+i82550
+i82551            : 10/100Mb/s      Intel 10/100 Mbps Fast Ethernet
+i82557a,b,c       : 10/100Mb/s      Intel 10/100 Mbps Fast Ethernet
+i82558a           : 10/100Mb/s      Intel 10/100 Mbps Fast Ethernet
+i82559a,b,c,er    : 10/100Mb/s      Intel 10/100 Mbps Fast Ethernet
+i82562
+i82801
+igb
+ne2k_pci          : 10Mb/s          RTL8029 - NE2000 PCI
+pcnet             : 10/100Mb/s      AMD PCnet FAST III Ethernet
+rocker
+rtl8139           : 10/100Mb/s      Realtek Fast Ethernet
+virtio-net-pci    : 1Gb/s           Virtual High Performance Ethernet card
 ```

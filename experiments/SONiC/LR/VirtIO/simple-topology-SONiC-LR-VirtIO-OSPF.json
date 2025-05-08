@@ -1,0 +1,84 @@
+{
+  "experiment_name": "Simple topology SONiC LR VirtIO OSPF",
+  "plot_legend_when_merged": "SONiC LR VirtIO OSPF",
+  "config": {
+    "project_name": "router-os-benchmark",
+    "template_prefix": "Benchmark",
+    "guest_image_path": "/home/julien/Programmation/vm/Debian/tmp/debian-bookworm.qcow2",
+    "gns3": {
+      "url": "http://127.0.0.1:3080",
+      "server_username": "admin",
+      "server_password": "gns3"
+    }
+  },
+  "network": {
+    "nodes": {
+      "Client 1": {
+        "type": "guest",
+        "vcpu": 1,
+        "ram": 1024,
+        "ip": "10.0.1.2"
+      },
+      "Server 1": {
+        "type": "guest",
+        "vcpu": 1,
+        "ram": 1024,
+        "ip": "10.0.2.2"
+      },
+      "Router 1": {
+        "type": "router",
+        "vcpu": 1,
+        "ram": 1024,
+        "os": "SONiC",
+        "nic": "virtio-net-pci",
+        "adapters": 6,
+        "ips": [
+          {
+            "adapter": 3,
+            "ip": "10.0.1.1"
+          },
+          {
+            "adapter": 4,
+            "ip": "10.0.2.1"
+          }
+        ]
+      }
+    },
+    "links": [
+      {
+        "node_a": "Client 1",
+        "adapter_a": 0,
+        "node_b": "Router 1",
+        "adapter_b": 3
+      },
+      {
+        "node_a": "Server 1",
+        "adapter_a": 0,
+        "node_b": "Router 1",
+        "adapter_b": 4
+      }
+    ]
+  },
+  "tests": [
+    {
+      "name": "test1",
+      "test": "rrul",
+      "fire_at": 0,
+      "duration": 60,
+      "from": "Client 1",
+      "to": "Server 1"
+    }
+  ],
+  "os_list": {
+    "SONiC": {
+      "input_ready": ":~",
+      "trigger_sequence": null,
+      "login": "admin",
+      "password": "YourPaSsWoRd",
+      "configuration": "iproute2",
+      "interface_prefix": "eth",
+      "interfaces_start_at": 0,
+      "image_path": "/home/julien/Programmation/vm/SONiC/sonic-vs-202411.img"
+    }
+  }
+}

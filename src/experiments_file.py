@@ -42,7 +42,7 @@ schema = {
                             'ram': {'type': 'integer', 'minimum': 1},
                             'os': {'type': ['string', 'null']},
                             'ip': {'type': 'string', 'format': 'ip-address'},
-                            'nic': {'enum': ['e1000', 'i82551', 'i82557b', 'i82559er', 'ne2k_pci', 'ne2k_isa', 'pcnet', 'rtl8139', 'virtio']},
+                            'nic': {'enum': ['e1000', 'e1000e', 'i82550', 'i82551', 'i82551', 'i82557a', 'i82557b','i82557c', 'i82558a', 'i82559a', 'i82559b', 'i82559c', 'i82559er', 'i82562', 'i82801', 'igb', 'ne2k_pci', 'pcnet', 'rocker', 'rtl8139', 'virtio-net-pci']},
                             'adapters': {'type': 'integer', 'minimum': 1},
                             'ips': {
                                 'type': 'array',

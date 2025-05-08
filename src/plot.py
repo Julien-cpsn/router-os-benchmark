@@ -1,10 +1,9 @@
 import os
-import random
 import subprocess
 
 from src.constants import Constants
 from src.types import Test
-from src.utils import get_experiment_test_results
+from src.utils import get_experiment_test_results, sanitize_string
 
 """
 COLORS = [
@@ -33,7 +32,7 @@ def get_colors(files: list) -> str:
     return ','.join(colors)
 """
 
-def main(experiment_list: list[Constants]):
+def main(experiment_list: list[Constants], log_scale: bool, show_title: bool, remove_legends: list[str]):
     experiments: dict[Constants, dict[Test, list[str]]] = {}
 
     if len(experiment_list) == 1:
@@ -45,14 +44,20 @@ def main(experiment_list: list[Constants]):
         print(f'Merging ', end='')
 
         directory = 'merged'
-        for constants in experiment_list:
-            print(constants.EXPERIMENT_NAME, end=' ')
-            directory += f'-{constants.EXPERIMENT_NAME}'
+        for constants in sorted(experiment_list, key=lambda c: c.PLOT_LEGEND_WHEN_MERGED):
+            directory += f'-{sanitize_string(constants.PLOT_LEGEND_WHEN_MERGED)}'
+
+        for index, constants in enumerate(experiment_list):
+            print(constants.PLOT_LEGEND_WHEN_MERGED, end='')
+
             experiments[constants] = extract_data(constants)
+
+            if index != len(experiment_list) - 1:
+                print(', ', end='')
 
     print('\n')
 
-    plot_experiments(experiments, directory)
+    plot_experiments(experiments, directory, log_scale, show_title, remove_legends)
 
 def extract_data(constants: Constants) -> dict[Test, list[str]]:
     data = {}
@@ -66,7 +71,7 @@ def extract_data(constants: Constants) -> dict[Test, list[str]]:
 
     return data
 
-def plot_experiments(experiments: dict[Constants, dict[Test, list[str]]], plot_directory_name: str):
+def plot_experiments(experiments: dict[Constants, dict[Test, list[str]]], plot_directory_name: str, log_scale: bool, show_title: bool, remove_legends: list[str]):
     legends_to_replace: list[str] = []
     tests_to_plot: dict[str, list[str]] = {}
 
@@ -92,46 +97,61 @@ def plot_experiments(experiments: dict[Constants, dict[Test, list[str]]], plot_d
                 tests_to_plot[test.name].append(path)
 
     plots = [
-        ('box_totals', 'Box plot of totals', 0),
-        ('icmp_cdf', 'ICMP CDF', 13)
+        ('box_totals', 'Box plot of totals'),
+        ('icmp_cdf', 'ICMP CDF')
+    ]
+
+    extensions = [
+        'svg',
+        'png'
     ]
 
     for test_name, files in tests_to_plot.items():
         print(f'Plotting {test_name}')
-        for plot, plot_title, note_adjustment in plots:
-            #fig_note_line1 = f'{EXPERIMENT_DURATION}s, NIC {ROUTER_NIC}'
-            #fig_note_line2 = f'{ROUTER_VCPU} vCPU, {ROUTER_RAM}Mb RAM'
+        for plot, plot_title in plots:
+            for extension in extensions:
+                #fig_note_line1 = f'{EXPERIMENT_DURATION}s, NIC {ROUTER_NIC}'
+                #fig_note_line2 = f'{ROUTER_VCPU} vCPU, {ROUTER_RAM}Mb RAM'
 
-            plot_directory =f'plots/{plot_directory_name}/{test_name}'
-            os.makedirs(plot_directory, exist_ok=True)
-            plot_path = f'{plot_directory}/{plot}.svg'
+                plot_directory =f'plots/{plot_directory_name}/{test_name}'
+                os.makedirs(plot_directory, exist_ok=True)
+                plot_path = f'{plot_directory}/{plot}.{extension}'
 
-            subprocess.Popen([
-                'flent',
-                #'--new-gui-instance',
-                '-o', plot_path,
-                '-p', plot,
-                #'--scale-mode',
-                '--log-scale-y', 'log10',
-                '--skip-missing-series',
-                #'--legend-title', 'OS',
-                '--no-title',
-                #'--override-title', f'{real_experiment_name}\n{plot_title}',
-                #'--figure-note', (' ' * (190 - note_adjustment - len(fig_note_line1))) + fig_note_line1 + '\n' + (' ' * (190 - note_adjustment - len(fig_note_line2))) + fig_note_line2,
-                '--filter-regexp', '__.*',
-                '--filter-regexp', '.* - ',
-                '--filter-regexp', 'Ping \\(ms\\) --',
-                '--filter-regexp', 'ICMP - ',
-                '--filter-regexp', '(?:[0-9]{1,3}\\.){3}[0-9]{1,3}',
-                #'--colours', get_colors(files),
-                '--no-annotation',
-                '--no-markers',
-                #'--no-matplotlibrc',
-                '--no-hover-highlight',
-                #'--figure-width=9',
-                #'--figure-height=6',
-                #'--figure-dpi=300',
-                '--fallback-layout'
-            ] + files + legends_to_replace)
+                additional_arguments = []
 
-            print(f'Plot {plot_title}: {os.getcwd()}/{plot_path}')
+                if log_scale:
+                    additional_arguments += ['--log-scale-y', 'log10']
+
+                if not show_title:
+                    additional_arguments += ['--no-title']
+
+                for remove_legend in remove_legends:
+                    additional_arguments += ['--filter-regexp', remove_legend]
+
+                subprocess.Popen([
+                    'flent',
+                    #'--new-gui-instance',
+                    '-o', plot_path,
+                    '-p', plot,
+                    #'--scale-mode',
+                    '--skip-missing-series',
+                    #'--legend-title', 'OS',
+                    #'--override-title', f'{real_experiment_name}\n{plot_title}',
+                    #'--figure-note', (' ' * (190 - note_adjustment - len(fig_note_line1))) + fig_note_line1 + '\n' + (' ' * (190 - note_adjustment - len(fig_note_line2))) + fig_note_line2,
+                    '--filter-regexp', '__.*',
+                    '--filter-regexp', '.* - ',
+                    '--filter-regexp', 'Ping \\(ms\\) --',
+                    '--filter-regexp', 'ICMP - ',
+                    '--filter-regexp', '(?:[0-9]{1,3}\\.){3}[0-9]{1,3}',
+                    #'--colours', get_colors(files),
+                    '--no-annotation',
+                    '--no-markers',
+                    #'--no-matplotlibrc',
+                    '--no-hover-highlight',
+                    #'--figure-width=9',
+                    #'--figure-height=6',
+                    #'--figure-dpi=300',
+                    '--fallback-layout'
+                ] + files + legends_to_replace + additional_arguments)
+
+                print(f'Plot {plot_title}: {os.getcwd()}/{plot_path}')

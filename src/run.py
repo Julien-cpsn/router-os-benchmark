@@ -252,10 +252,8 @@ def run_test(gns3: Gns3Connector, constants: Constants, context_name: str, rotat
             logger.info('Shutting down nodes...')
 
             try:
-                """
                 for node in nodes:
                     node.gns3_node.stop()
-                """
             except:
                 print()
         exit(1)

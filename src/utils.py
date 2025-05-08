@@ -25,13 +25,13 @@ def get_experiment_test_results(experiment_name: str, test_name: str) -> list[st
     path = f'shared/{experiment_name}/{test_name}'
 
     if not os.path.exists(path):
-        print(f'Folder "{path}" does not exist')
+        print(f'\nFolder "{path}" does not exist')
         exit(1)
 
     paths = glob.glob(f'{path}/*.flent.gz') + glob.glob(f'{path}/*/*.flent.gz')
 
     if len(paths) == 0:
-        print(f'Folder "{path}" has no test results')
+        print(f'\nFolder "{path}" has no test results')
         exit(1)
 
     return paths
