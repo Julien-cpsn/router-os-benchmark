@@ -46,14 +46,33 @@ schema = {
                             'adapters': {'type': 'integer', 'minimum': 1},
                             'ips': {
                                 'type': 'array',
+                                'required': ['adapter', 'ip'],
                                 'additionalProperties': {
                                     'adapter': {'type': 'integer', 'minimum': 0},
                                     'ip': {'type': 'string', 'format': 'ip-address'},
                                 }
+                            },
+                            'routes': {
+                                'type': 'object',
+                                'required': ['RIP', 'OSPF', 'BGP', 'MPLS'],
+                                'properties': {
+                                    'static': {
+                                        'type': 'array',
+                                        'required': ['distant_network', 'via'],
+                                        'additionalProperties': {
+                                            'distant_network': {'type': 'string', 'format': 'ip-address'},
+                                            'via': {'type': 'string', 'format': 'ip-address'}
+                                        }
+                                    },
+                                    'RIP': {'type': 'array'},
+                                    'OSPF': {'type': 'array'},
+                                    'BGP': {'type': 'array'},
+                                    'MPLS': {'type': 'array'}
+                                }
                             }
                         },
                         'if': {'properties': {'type': {'const': 'router'}}},
-                        'then': {'required': ['os', 'nic', 'adapters', 'ips']},
+                        'then': {'required': ['os', 'nic', 'adapters', 'ips', 'routes']},
                         'else': {'required': ['ip']},
                     }
                 },
@@ -91,28 +110,54 @@ schema = {
             'type': 'object',
             'additionalProperties': {
                 'type': 'object',
-                'required': ['input_ready', 'login', 'password', 'trigger_sequence', 'configuration', 'interface_prefix', 'interfaces_start_at', 'image_path'],
+                'required': ['input_ready', 'login', 'password', 'trigger_sequence', 'network_stack', 'routing_stack', 'interface_prefix', 'interfaces_start_at', 'image_path'],
                 'properties': {
                     'input_ready': {'type': 'string'},
                     'trigger_sequence': {'type': ['string', 'null']},
                     'login': {'type': ['string', 'null']},
                     'password': {'type': ['string', 'null']},
-                    'configuration': {
+                    'network_stack': {
                         'oneOf': [
-                            {
-                                'type': 'null'
-                            },
                             {
                                 'type': ['string'],
                                 'enum': ['iproute2', 'freebsd', 'openbsd']
                             },
                             {
                                 'type': 'object',
-                                'required': ['start', 'add_ip_address', 'add_ip_route'],
+                                'required': ['start', 'add_ip_address', 'add_static_address', 'stop'],
                                 'properties': {
-                                    'start': {'type': 'array'},
+                                    'start': {'type': 'array', 'additionalProperties': {'type': 'string'}},
                                     'add_ip_address': {'type': 'array'},
-                                    'add_ip_route': {'type': 'array'},
+                                    'add_static_route': {'type': 'array'},
+                                    'stop': {'type': 'array', 'additionalProperties': {'type': 'string'}},
+                                },
+                            }
+                        ],
+                    },
+                    'routing_stack': {
+                        'oneOf': [
+                            {
+                                'type': 'null'
+                            },
+                            {
+                                'type': ['string'],
+                                'enum': ['frr', 'quagga', 'bird2', 'holo', 'gobgp']
+                            },
+                            {
+                                'type': 'object',
+                                'required': ['start', 'add_rip_route', 'stop'],
+                                'properties': {
+                                    'start': {'type': 'array', 'additionalProperties': {'type': 'string'}},
+                                    'add_rip_route': {'type': 'array'},
+                                    'add_ospf_route': {
+                                        'type': 'object',
+                                        'required': ['add_interface', 'add_area'],
+                                        'properties': {
+                                            'add_interface': {'type': 'array', 'additionalProperties': {'type': 'string'}},
+                                            'add_area': {'type': 'array', 'additionalProperties': {'type': 'string'}},
+                                        }
+                                    },
+                                    'stop': {'type': 'array', 'additionalProperties': {'type': 'string'}},
                                 },
                             }
                         ],

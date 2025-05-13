@@ -12,8 +12,10 @@ from src.links import link_nodes, generate_routes_from_test, find_node
 from src.logger import def_context
 from src.nodes import create_node
 from src.projects import create_project, find_and_delete_projects
-from src.telnet import connect, guest_base_config, client_test_rules, router_login_rules, router_add_ip_address_rules, \
-    guest_add_route, router_add_ip_route_rules
+from src.rules.guest import guest_base_config, guest_add_route, client_test_rules
+from src.rules.router import router_login_rules
+from src.rules.static import router_add_ip_address_rules, router_add_ip_route_rules
+from src.telnet import connect
 from src.templates import generate_router_template, generate_guest_template, find_and_delete_templates
 from src.types import OperatingSystem
 
@@ -169,29 +171,36 @@ def run_test(gns3: Gns3Connector, constants: Constants, context_name: str, rotat
                 login=operating_system.login,
                 password=operating_system.password,
                 trigger_sequence=operating_system.trigger_sequence,
-                configuration=operating_system.configuration,
+                network_stack=operating_system.network_stack,
+                routing_stack=operating_system.routing_stack
             )
 
             for ip in router.ips:
                 rules += router_add_ip_address_rules(
                     input_ready=operating_system.input_ready,
-                    configuration=operating_system.configuration,
+                    network_stack=operating_system.network_stack,
                     ip_address=ip['ip'],
                     interface_prefix=operating_system.interface_prefix,
                     interfaces_start_at=operating_system.interfaces_start_at,
                     interface=ip['adapter'],
                 )
 
-            for distant_network in router.distant_networks:
+            # Routing
+            for route in router.routes['RIP']:
                 rules += router_add_ip_route_rules(
                     input_ready=operating_system.input_ready,
                     configuration=operating_system.configuration,
-                    distant_network=distant_network.network,
-                    gateway=distant_network.gateway,
-                    interface_prefix=operating_system.interface_prefix,
-                    interfaces_start_at=operating_system.interfaces_start_at,
-                    interface=distant_network.adapter
+                    distant_network=route['distant_network'],
+                    gateway=route['via']
                 )
+            for route in router.routes['OSPF']:
+                rules += []
+
+            for route in router.routes['BGP']:
+                rules += []
+
+            for route in router.routes['MPLS']:
+                rules += []
 
             connect(
                 context_name,

@@ -32,24 +32,6 @@ def link_nodes(gns3: Gns3Connector, project_id: str, nodes: list[Node], link: di
         logger.error(e)
         exit(1)
 
-    node_a_ip = node_a.get_ip(adapter_a)
-    node_b_ip = node_b.get_ip(adapter_b)
-
-    if node_a.node_type == 'router':
-        node_a.distant_networks.append(DistantNetwork(
-            network=network_from_ip(node_b_ip),
-            gateway=node_a_ip,
-            adapter=adapter_a
-        ))
-
-    if node_b.node_type == 'router':
-        node_b.distant_networks.append(DistantNetwork(
-            network=network_from_ip(node_a_ip),
-            gateway=node_b_ip,
-            adapter=adapter_b
-        ))
-
-
 def generate_routes_from_test(tests: list[Test], nodes: list[Node]):
     logger.info('Generating routes from provided tests')
 

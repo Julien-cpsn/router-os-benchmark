@@ -8,7 +8,19 @@ from src.utils import sanitize_string
 
 
 class Node:
-    def __init__(self, name: str, node_type: str, vcpu: int, ram: int, ip: Optional[str] = None, os: Optional[str] = None, nic: Optional[str] = None, adapters: Optional[int] = None, ips: Optional[list[dict]] = None):
+    def __init__(
+            self,
+            name: str,
+            node_type: str,
+            vcpu: int,
+            ram: int,
+            ip: Optional[str] = None,
+            os: Optional[str] = None,
+            nic: Optional[str] = None,
+            adapters: Optional[int] = None,
+            ips: Optional[list[dict]] = None,
+            routes: Optional[dict] = None
+        ):
         self.name = name
         self.node_type = node_type
         self.vcpu = vcpu
@@ -25,6 +37,7 @@ class Node:
                 self.nic = nic
                 self.adapters = adapters
                 self.ips = ips
+                self.routes = routes
 
     def get_adapter(self, index: int) -> dict:
         for ip in self.ips:
@@ -42,13 +55,14 @@ class Node:
         exit(1)
 
 class OperatingSystem:
-    def __init__(self, name: str, input_ready: str, trigger_sequence: str, login: Optional[str], password: Optional[str], configuration: str|list[str], interface_prefix: str, interfaces_start_at: int, image_path: str):
+    def __init__(self, name: str, input_ready: str, trigger_sequence: str, login: Optional[str], password: Optional[str], network_stack: str|list[str], routing_stack: str|list[str], interface_prefix: str, interfaces_start_at: int, image_path: str):
         self.name = name
         self.input_ready = input_ready
         self.trigger_sequence = trigger_sequence
         self.login = login
         self.password = password
-        self.configuration = configuration
+        self.network_stack = network_stack
+        self.routing_stack = routing_stack
         self.interface_prefix = interface_prefix
         self.interfaces_start_at = interfaces_start_at
         self.image_path = image_path
