@@ -55,7 +55,7 @@ class Node:
         exit(1)
 
 class OperatingSystem:
-    def __init__(self, name: str, input_ready: str, trigger_sequence: str, login: Optional[str], password: Optional[str], network_stack: str|list[str], routing_stack: str|list[str], interface_prefix: str, interfaces_start_at: int, image_path: str):
+    def __init__(self, name: str, input_ready: str, trigger_sequence: str, login: Optional[str], password: Optional[str], network_stack: str|dict[str, list[str]], routing_stack: Optional[str|dict[str, dict]], interface_prefix: str, interfaces_start_at: int, image_path: str):
         self.name = name
         self.input_ready = input_ready
         self.trigger_sequence = trigger_sequence

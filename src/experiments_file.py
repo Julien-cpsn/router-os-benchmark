@@ -64,7 +64,14 @@ schema = {
                                             'via': {'type': 'string', 'format': 'ip-address'}
                                         }
                                     },
-                                    'RIP': {'type': 'array'},
+                                    'RIP': {
+                                        'type': 'object',
+                                        'required': ['enable_interfaces', 'add_networks'],
+                                        'properties': {
+                                            'enable_interfaces': {'type': 'array', 'additionalProperties': {'type': 'number', 'minimum': 0}},
+                                            'add_networks': {'type': 'array', 'additionalProperties': {'type': 'string', 'format': 'ip-address'}},
+                                        }
+                                    },
                                     'OSPF': {'type': 'array'},
                                     'BGP': {'type': 'array'},
                                     'MPLS': {'type': 'array'}
@@ -145,11 +152,18 @@ schema = {
                             },
                             {
                                 'type': 'object',
-                                'required': ['start', 'add_rip_route', 'stop'],
+                                'required': ['start', 'RIP', 'OSPF', 'stop'],
                                 'properties': {
                                     'start': {'type': 'array', 'additionalProperties': {'type': 'string'}},
-                                    'add_rip_route': {'type': 'array'},
-                                    'add_ospf_route': {
+                                    'RIP': {
+                                        'type': 'object',
+                                        'required': ['enable_interface', 'add_network'],
+                                        'properties': {
+                                            'enable_interface': {'type': 'array', 'additionalProperties': {'type': 'string'}},
+                                            'add_network': {'type': 'array', 'additionalProperties': {'type': 'string'}},
+                                        }
+                                    },
+                                    'OSPF': {
                                         'type': 'object',
                                         'required': ['add_interface', 'add_area'],
                                         'properties': {

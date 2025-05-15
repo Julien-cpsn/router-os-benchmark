@@ -1,9 +1,11 @@
 import os
 import subprocess
+from typing import Optional
 
 from src.constants import Constants
 from src.types import Test
-from src.utils import get_experiment_test_results, sanitize_string
+from src.utils import get_experiment_test_results, sanitize_string, extract_and_sort_common_parts, count_lowercase_char, \
+    sort_word
 
 """
 COLORS = [
@@ -32,8 +34,9 @@ def get_colors(files: list) -> str:
     return ','.join(colors)
 """
 
-def main(experiment_list: list[Constants], log_scale: bool, show_title: bool, remove_legends: list[str]):
+def main(experiment_list: list[Constants], log_scale: bool, show_title: bool, hide_note: bool, remove_legends: list[str], remove_common_legend: bool):
     experiments: dict[Constants, dict[Test, list[str]]] = {}
+    notes = None
 
     if len(experiment_list) == 1:
         constants = experiment_list[0]
@@ -43,9 +46,11 @@ def main(experiment_list: list[Constants], log_scale: bool, show_title: bool, re
     else:
         print(f'Merging ', end='')
 
-        directory = 'merged'
-        for constants in sorted(experiment_list, key=lambda c: c.PLOT_LEGEND_WHEN_MERGED):
-            directory += f'-{sanitize_string(constants.PLOT_LEGEND_WHEN_MERGED)}'
+        plot_legends = [constants.PLOT_LEGEND_WHEN_MERGED for constants in experiment_list]
+        common_words, non_common_words = extract_and_sort_common_parts(plot_legends)
+        common_words_str = ' '.join(common_words)
+        non_common_words_str = ' '.join(non_common_words)
+        directory = f'merged_{sanitize_string(non_common_words_str)}_{sanitize_string(common_words_str)}'
 
         for index, constants in enumerate(experiment_list):
             print(constants.PLOT_LEGEND_WHEN_MERGED, end='')
@@ -55,9 +60,15 @@ def main(experiment_list: list[Constants], log_scale: bool, show_title: bool, re
             if index != len(experiment_list) - 1:
                 print(', ', end='')
 
+        if remove_common_legend:
+            remove_legends += sorted(list(common_words), key=lambda x: sort_word(x))
+
+        if not hide_note:
+            notes = common_words
+
     print('\n')
 
-    plot_experiments(experiments, directory, log_scale, show_title, remove_legends)
+    plot_experiments(experiments, directory, notes, log_scale, show_title, remove_legends)
 
 def extract_data(constants: Constants) -> dict[Test, list[str]]:
     data = {}
@@ -71,7 +82,19 @@ def extract_data(constants: Constants) -> dict[Test, list[str]]:
 
     return data
 
-def plot_experiments(experiments: dict[Constants, dict[Test, list[str]]], plot_directory_name: str, log_scale: bool, show_title: bool, remove_legends: list[str]):
+def adjusted_note(notes: list[str], note_adjustment: int) -> str:
+    lines = []
+    for index, line in enumerate(notes):
+        spaces_count = 196 - note_adjustment - len(line) + int(count_lowercase_char(line) / 3)
+
+        if index == 0:
+            spaces_count -= 1
+
+        lines.append(' ' * spaces_count + line + '\n')
+
+    return ''.join(lines)
+
+def plot_experiments(experiments: dict[Constants, dict[Test, list[str]]], plot_directory_name: str, notes: Optional[list[str]], log_scale: bool, show_title: bool, remove_legends: list[str]):
     legends_to_replace: list[str] = []
     tests_to_plot: dict[str, list[str]] = {}
 
@@ -97,8 +120,8 @@ def plot_experiments(experiments: dict[Constants, dict[Test, list[str]]], plot_d
                 tests_to_plot[test.name].append(path)
 
     plots = [
-        ('box_totals', 'Box plot of totals'),
-        ('icmp_cdf', 'ICMP CDF')
+        ('box_totals', 'Box plot of totals', 0),
+        ('icmp_cdf', 'ICMP CDF', 13)
     ]
 
     extensions = [
@@ -108,25 +131,26 @@ def plot_experiments(experiments: dict[Constants, dict[Test, list[str]]], plot_d
 
     for test_name, files in tests_to_plot.items():
         print(f'Plotting {test_name}')
-        for plot, plot_title in plots:
-            for extension in extensions:
-                #fig_note_line1 = f'{EXPERIMENT_DURATION}s, NIC {ROUTER_NIC}'
-                #fig_note_line2 = f'{ROUTER_VCPU} vCPU, {ROUTER_RAM}Mb RAM'
+        for plot, plot_title, note_adjustment in plots:
+            additional_arguments = []
 
+            if notes is not None:
+                figure_note = adjusted_note(notes, note_adjustment)
+                additional_arguments += ['--figure-note', figure_note]
+
+            if log_scale:
+                additional_arguments += ['--log-scale-y', 'log10']
+
+            if not show_title:
+                additional_arguments += ['--no-title']
+
+            for remove_legend in remove_legends:
+                additional_arguments += ['--filter-regexp', remove_legend.lstrip().rstrip() + '\\s?']
+
+            for extension in extensions:
                 plot_directory =f'plots/{plot_directory_name}/{test_name}'
                 os.makedirs(plot_directory, exist_ok=True)
                 plot_path = f'{plot_directory}/{plot}.{extension}'
-
-                additional_arguments = []
-
-                if log_scale:
-                    additional_arguments += ['--log-scale-y', 'log10']
-
-                if not show_title:
-                    additional_arguments += ['--no-title']
-
-                for remove_legend in remove_legends:
-                    additional_arguments += ['--filter-regexp', remove_legend]
 
                 subprocess.Popen([
                     'flent',
@@ -137,9 +161,7 @@ def plot_experiments(experiments: dict[Constants, dict[Test, list[str]]], plot_d
                     '--skip-missing-series',
                     #'--legend-title', 'OS',
                     #'--override-title', f'{real_experiment_name}\n{plot_title}',
-                    #'--figure-note', (' ' * (190 - note_adjustment - len(fig_note_line1))) + fig_note_line1 + '\n' + (' ' * (190 - note_adjustment - len(fig_note_line2))) + fig_note_line2,
-                    '--filter-regexp', '__.*',
-                    '--filter-regexp', '.* - ',
+                    '--filter-regexp', '_',
                     '--filter-regexp', 'Ping \\(ms\\) --',
                     '--filter-regexp', 'ICMP - ',
                     '--filter-regexp', '(?:[0-9]{1,3}\\.){3}[0-9]{1,3}',

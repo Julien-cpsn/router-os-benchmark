@@ -19,15 +19,17 @@ def main():
     run_parser = subparsers.add_parser('run')
 
     plot_parser = subparsers.add_parser('plot')
-    plot_parser.add_argument('--log-scale', dest='log_scale', action='store_true', help="Use log 10 scale")
-    plot_parser.add_argument('--show-title', dest='show_title', action='store_true', help="Show plot title")
-    plot_parser.add_argument('--remove-legend', dest='remove_legends', action='append', help="Regex in legend to remove")
+    plot_parser.add_argument('--log-scale', dest='log_scale', action='store_true', help='Use log 10 scale')
+    plot_parser.add_argument('--show-title', dest='show_title', action='store_true', help='Show plot title')
+    plot_parser.add_argument('--hide-note', dest='hide_note', action='store_true', help='Hide common legend note')
+    plot_parser.add_argument('--remove-legend', dest='remove_legends', action='append', help='Regex in legend to remove')
+    plot_parser.add_argument('--remove-common-legend', dest='remove_common_legends', action='store_true', help='Remove common parts from legend')
 
     clean_parser = subparsers.add_parser('clean')
 
-    parser.add_argument('-d', '--directory', dest='experiment_directories', type=dir_path, action='append', help="Directory containing experiment files")
-    parser.add_argument('-R', '--recursive', dest='recursive', action='store_true', help="Find files recursively. Only works with directories.")
-    parser.add_argument('-i', '--input', dest='experiment_files', type=argparse.FileType('r'), action='append', help="Input experiment files")
+    parser.add_argument('-d', '--directory', dest='experiment_directories', type=dir_path, action='append', help='Directory containing experiment files')
+    parser.add_argument('-R', '--recursive', dest='recursive', action='store_true', help='Find files recursively. Only works with directories.')
+    parser.add_argument('-i', '--input', dest='experiment_files', type=argparse.FileType('r'), action='append', help='Input experiment files')
 
     args = parser.parse_args()
 
@@ -60,7 +62,7 @@ def main():
         case 'plot':
             remove_legends = args.remove_legends if args.remove_legends is not None else []
 
-            src.plot.main(experiment_list, args.log_scale, args.show_title, remove_legends)
+            src.plot.main(experiment_list, args.log_scale, args.show_title, args.hide_note, remove_legends, args.remove_common_legends)
         case 'clean':
             for constants in experiment_list:
                 src.clean.main(constants)

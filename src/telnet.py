@@ -7,7 +7,7 @@ from loguru import logger
 from src.logger import def_context
 
 
-def connect(context_name: str, section: str, part: str, node: Node, rules: list[list[str]], log: bool):
+def connect(context_name: str, section: str, part: str, node: Node, rules: list[tuple[str, str]], log: bool):
     with def_context(name=context_name, section=section, part=part):
         logger.info(f'Telnet start transmission')
 

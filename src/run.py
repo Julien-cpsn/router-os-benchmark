@@ -13,8 +13,12 @@ from src.logger import def_context
 from src.nodes import create_node
 from src.projects import create_project, find_and_delete_projects
 from src.rules.guest import guest_base_config, guest_add_route, client_test_rules
+from src.rules.network_stack import router_network_start_rules, router_network_stack_stop_rules
 from src.rules.router import router_login_rules
-from src.rules.static import router_add_ip_address_rules, router_add_ip_route_rules
+from src.rules.routing.RIP import router_rip_rules
+from src.rules.routing.static import router_add_ip_address_rules, router_add_ip_route_rules
+from src.rules.routing_stack import router_routing_stack_start_rules, router_routing_stack_stop_rules
+from src.rules.utils import find_highest_ip_address
 from src.telnet import connect
 from src.templates import generate_router_template, generate_guest_template, find_and_delete_templates
 from src.types import OperatingSystem
@@ -135,10 +139,10 @@ def run_test(gns3: Gns3Connector, constants: Constants, context_name: str, rotat
         with def_context(name=context_name, section='Test', part='Routes'):
             generate_routes_from_test(constants.TESTS, nodes)
 
-        for node in nodes:
-            with def_context(name=context_name, section=node.name, part='Start'):
-                logger.info(f'Starting {node.name}')
-                node.gns3_node.start()
+        for guest in constants.GUESTS:
+            with def_context(name=context_name, section=guest.name, part='Start'):
+                logger.info(f'Starting {guest.name}')
+                guest.gns3_node.start()
 
         # ----- CONFIG -----
 
@@ -161,38 +165,40 @@ def run_test(gns3: Gns3Connector, constants: Constants, context_name: str, rotat
             )
 
         for router in constants.ROUTERS:
+            with def_context(name=context_name, section=router.name, part='Start'):
+                logger.info(f'Starting {router.name}')
+                router.gns3_node.start()
+
             # Using either the specified OS or the rotation one if none was provided
             operating_system = constants.OS_TO_TEST[router.os] if router.os is not None else rotation_os
 
-            rules = []
-
-            rules += router_login_rules(
-                input_ready=operating_system.input_ready,
-                login=operating_system.login,
-                password=operating_system.password,
-                trigger_sequence=operating_system.trigger_sequence,
-                network_stack=operating_system.network_stack,
-                routing_stack=operating_system.routing_stack
-            )
+            rules = router_login_rules(self=operating_system)
+            rules += router_network_start_rules(self=operating_system)
 
             for ip in router.ips:
                 rules += router_add_ip_address_rules(
-                    input_ready=operating_system.input_ready,
-                    network_stack=operating_system.network_stack,
+                    self=operating_system,
                     ip_address=ip['ip'],
-                    interface_prefix=operating_system.interface_prefix,
-                    interfaces_start_at=operating_system.interfaces_start_at,
                     interface=ip['adapter'],
                 )
 
             # Routing
-            for route in router.routes['RIP']:
+            ## Static
+            for route in router.routes['static']:
                 rules += router_add_ip_route_rules(
-                    input_ready=operating_system.input_ready,
-                    configuration=operating_system.configuration,
+                    self=operating_system,
                     distant_network=route['distant_network'],
                     gateway=route['via']
                 )
+
+            rules += router_network_stack_stop_rules(self=operating_system)
+
+            highest_ip = find_highest_ip_address(ips=router.ips)
+            rules += router_routing_stack_start_rules(self=operating_system, router_id=highest_ip)
+
+            ## RIP
+            rules += router_rip_rules(self=operating_system, router=router)
+
             for route in router.routes['OSPF']:
                 rules += []
 
@@ -202,6 +208,9 @@ def run_test(gns3: Gns3Connector, constants: Constants, context_name: str, rotat
             for route in router.routes['MPLS']:
                 rules += []
 
+            rules += router_routing_stack_stop_rules(self=operating_system)
+
+            print(rules)
             connect(
                 context_name,
                 router.name,
@@ -261,8 +270,10 @@ def run_test(gns3: Gns3Connector, constants: Constants, context_name: str, rotat
             logger.info('Shutting down nodes...')
 
             try:
+                """
                 for node in nodes:
                     node.gns3_node.stop()
+                """
             except:
                 print()
         exit(1)
